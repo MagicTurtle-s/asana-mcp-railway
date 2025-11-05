@@ -1,0 +1,27 @@
+# MCP SDK
+mcp>=1.0.0
+
+# HTTP Server
+starlette>=0.27.0
+uvicorn>=0.23.0
+
+# HTTP Client
+httpx>=0.24.0
+
+# Data Validation
+pydantic>=2.0.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Async Support
+anyio>=3.7.0
+
+# Optional: Redis for production
+# redis>=4.6.0
+
+# Development Dependencies
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# black>=23.0.0
+# mypy>=1.5.0
