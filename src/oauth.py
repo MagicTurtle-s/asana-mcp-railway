@@ -3,6 +3,7 @@ Asana OAuth 2.0 Manager
 
 Handles the OAuth authorization code grant flow with PKCE for secure authentication.
 Manages access and refresh tokens with automatic renewal.
+Integrates with SessionManager for Desktop-scoped authentication.
 """
 
 import os
@@ -10,10 +11,17 @@ import time
 import secrets
 import hashlib
 import base64
-from typing import Dict, Optional, Tuple
+import asyncio
+import logging
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
 from urllib.parse import urlencode
 import httpx
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from .session_manager import Session, SessionState
+
+logger = logging.getLogger(__name__)
 
 
 class TokenData(BaseModel):
@@ -89,18 +97,19 @@ class AsanaOAuthManager:
 
         return verifier, challenge
 
-    def get_authorization_url(self, state: Optional[str] = None) -> Tuple[str, str]:
+    def get_authorization_url(self, session_id: Optional[str] = None) -> Tuple[str, str]:
         """
         Generate OAuth authorization URL with PKCE.
 
         Args:
-            state: CSRF protection token (generated if not provided)
+            session_id: Session identifier (used as state parameter)
 
         Returns:
-            Tuple of (authorization_url, state)
+            Tuple of (authorization_url, state/session_id)
         """
-        if not state:
-            state = secrets.token_urlsafe(32)
+        # Use session_id as state for session-based auth
+        # For backward compatibility, generate state if not provided
+        state = session_id if session_id else secrets.token_urlsafe(32)
 
         # Generate PKCE pair
         verifier, challenge = self.generate_pkce_pair()
@@ -119,6 +128,7 @@ class AsanaOAuthManager:
         }
 
         auth_url = f"{self.AUTH_URL}?{urlencode(params)}"
+        logger.info(f"Generated authorization URL for state: {state[:8]}...")
         return auth_url, state
 
     async def exchange_code_for_tokens(
@@ -300,6 +310,72 @@ class AsanaOAuthManager:
             return new_tokens.access_token
 
         return cached["access_token"]
+
+    async def get_valid_token_for_session(self, session: "Session") -> str:
+        """
+        Get a valid access token for a session, refreshing if necessary with concurrent protection.
+
+        Args:
+            session: Session object from SessionManager
+
+        Returns:
+            Valid access token
+
+        Raises:
+            AuthenticationError: If session not authenticated or refresh fails
+        """
+        if not session.access_token:
+            raise AuthenticationError("Session not authenticated")
+
+        # Check if refresh is needed
+        if not session.needs_refresh():
+            return session.access_token
+
+        # Use session's lock for concurrent request protection
+        async with session.refresh_lock:
+            # Double-check after acquiring lock (another request might have refreshed)
+            if not session.needs_refresh():
+                return session.access_token
+
+            # Check if already refreshing
+            if session.is_refreshing:
+                # Wait for refresh to complete (with timeout)
+                max_wait = 10  # seconds
+                start_time = time.time()
+                while session.is_refreshing and (time.time() - start_time) < max_wait:
+                    await asyncio.sleep(0.1)
+
+                if session.is_refreshing:
+                    raise AuthenticationError("Token refresh timeout")
+
+                return session.access_token
+
+            # Mark as refreshing
+            session.is_refreshing = True
+
+            try:
+                logger.info(f"Refreshing token for session {session.session_id[:8]}...")
+                new_tokens = await self.refresh_access_token(session.refresh_token)
+
+                # Update session with new tokens
+                session.update_tokens(
+                    new_tokens.access_token,
+                    new_tokens.refresh_token,
+                    new_tokens.expires_in
+                )
+
+                logger.info(f"Token refreshed successfully for session {session.session_id[:8]}...")
+                return new_tokens.access_token
+
+            except AuthenticationError as e:
+                logger.error(f"Token refresh failed for session {session.session_id[:8]}...: {str(e)}")
+                # Import SessionState at runtime to avoid circular import
+                from .session_manager import SessionState
+                session.state = SessionState.EXPIRED
+                raise
+
+            finally:
+                session.is_refreshing = False
 
     def get_user_info(self, user_id: str) -> Optional[Dict[str, str]]:
         """

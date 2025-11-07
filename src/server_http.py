@@ -25,6 +25,7 @@ from mcp.types import Tool, TextContent
 # Our modules
 from .oauth import initialize_oauth_manager, get_oauth_manager, AuthenticationError
 from .asana_client import AsanaClient, RateLimiter
+from .session_manager import initialize_session_manager, get_session_manager, SessionState
 from .tools.tasks import TASK_TOOLS
 from .tools.projects import PROJECT_TOOLS
 from .tools.relationships import RELATIONSHIP_TOOLS
@@ -65,6 +66,39 @@ async def get_asana_client_for_user(user_id: str) -> AsanaClient:
     access_token = await oauth_manager.get_valid_token(user_id)
     return AsanaClient(access_token, rate_limiter=rate_limiter)
 
+# Helper function to get Asana client for a session
+async def get_asana_client_for_session(session_id: str) -> AsanaClient:
+    """
+    Get an authenticated Asana client for a session.
+
+    Args:
+        session_id: Session identifier
+
+    Returns:
+        Authenticated AsanaClient
+
+    Raises:
+        AuthenticationError: If session not authenticated or token refresh fails
+    """
+    session_manager = get_session_manager()
+    oauth_manager = get_oauth_manager()
+
+    # Get session
+    session = await session_manager.get_session(session_id)
+    if not session:
+        raise AuthenticationError(f"Session {session_id} not found")
+
+    # Validate session
+    is_valid, error_msg = await session_manager.validate_session(session_id)
+    if not is_valid:
+        raise AuthenticationError(f"Session invalid: {error_msg}")
+
+    # Get valid token (with automatic refresh if needed)
+    access_token = await oauth_manager.get_valid_token_for_session(session)
+
+    return AsanaClient(access_token, rate_limiter=rate_limiter)
+
+
 
 # MCP Tool Registration
 @mcp_server.list_tools()
@@ -85,11 +119,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> list[TextContent]:
     """
     Handle tool calls from MCP clients.
 
-    For now, we'll use a default user. In production, this should
-    extract user_id from the request context.
+    Supports both session-based (with session_id) and legacy (with user_id) authentication.
     """
-    # TODO: Extract user_id from request context
-    # For development, use a default user_id
+    # Check for session_id (preferred) or user_id (legacy)
+    session_id = arguments.get("session_id")
     user_id = arguments.get("user_id", "default_user")
 
     try:
@@ -101,8 +134,11 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> list[TextContent]:
                 text=f"❌ Unknown tool: {name}"
             )]
 
-        # Get authenticated client
-        client = await get_asana_client_for_user(user_id)
+        # Get authenticated client (session-based or legacy)
+        if session_id:
+            client = await get_asana_client_for_session(session_id)
+        else:
+            client = await get_asana_client_for_user(user_id)
 
         # Call the tool handler
         handler = tool_def["handler"]
@@ -114,10 +150,16 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> list[TextContent]:
         return [TextContent(type="text", text=result)]
 
     except AuthenticationError as e:
-        return [TextContent(
-            type="text",
-            text=f"🔒 Authentication required: {str(e)}\n\nPlease visit /oauth/start to authenticate."
-        )]
+        if session_id:
+            return [TextContent(
+                type="text",
+                text=f"🔒 Authentication required: {str(e)}\n\nSession {session_id[:8]}... needs re-authentication.\nVisit /oauth/start?session={session_id} to re-authenticate."
+            )]
+        else:
+            return [TextContent(
+                type="text",
+                text=f"🔒 Authentication required: {str(e)}\n\nPlease visit /oauth/start to authenticate."
+            )]
     except Exception as e:
         logger.error(f"Error calling tool {name}: {str(e)}", exc_info=True)
         return [TextContent(
@@ -147,17 +189,43 @@ async def oauth_start(request: Request) -> Response:
     """
     Start OAuth authorization flow.
 
+    Supports both session-based (with ?session=xxx) and legacy flows.
     Redirects user to Asana authorization page.
     """
     oauth_manager = get_oauth_manager()
+    session_manager = get_session_manager()
 
-    # Generate authorization URL
-    auth_url, state = oauth_manager.get_authorization_url()
+    # Check if session_id is provided (session-based flow)
+    session_id = request.query_params.get("session")
 
-    # Store state in session (for production, use proper session management)
-    # For now, we'll include it in the redirect
+    if session_id:
+        # Session-based flow
+        session = await session_manager.get_session(session_id)
+        if not session:
+            return JSONResponse({
+                "error": "invalid_session",
+                "description": "Session not found"
+            }, status_code=404)
 
-    logger.info(f"Starting OAuth flow with state: {state}")
+        # Check circuit breaker
+        if not session.should_allow_reauth():
+            return JSONResponse({
+                "error": "rate_limited",
+                "description": "Too many authentication attempts. Please wait before trying again.",
+                "retry_after": 600  # 10 minutes
+            }, status_code=429)
+
+        # Record re-auth attempt
+        session.record_reauth_attempt()
+
+        # Generate authorization URL with session_id as state
+        auth_url, state = oauth_manager.get_authorization_url(session_id=session_id)
+        logger.info(f"Starting OAuth flow for session {session_id[:8]}... (attempt #{session.re_auth_attempts.count if session.re_auth_attempts else 1})")
+
+    else:
+        # Legacy flow (backward compatibility)
+        auth_url, state = oauth_manager.get_authorization_url()
+        logger.info(f"Starting OAuth flow with state: {state[:8]}... (legacy)")
 
     return RedirectResponse(url=auth_url)
 
@@ -167,8 +235,10 @@ async def oauth_callback(request: Request) -> Response:
     Handle OAuth callback from Asana.
 
     Exchanges authorization code for tokens and stores them.
+    Supports both session-based and legacy flows.
     """
     oauth_manager = get_oauth_manager()
+    session_manager = get_session_manager()
 
     # Get authorization code and state from query params
     code = request.query_params.get("code")
@@ -192,21 +262,55 @@ async def oauth_callback(request: Request) -> Response:
         # Exchange code for tokens
         tokens = await oauth_manager.exchange_code_for_tokens(code, state)
 
-        # Store tokens for user
-        user_id = tokens.user_gid or "default_user"
-        oauth_manager.store_tokens(user_id, tokens)
+        # Check if state is a session_id (session-based flow)
+        session = await session_manager.get_session(state)
 
-        logger.info(f"OAuth successful for user: {tokens.user_name} ({user_id})")
+        if session:
+            # Session-based flow
+            success = await session_manager.store_session(
+                session_id=state,
+                access_token=tokens.access_token,
+                refresh_token=tokens.refresh_token,
+                expires_in=tokens.expires_in,
+                user_gid=tokens.user_gid,
+                user_name=tokens.user_name,
+                user_email=tokens.user_email
+            )
 
-        return JSONResponse({
-            "status": "success",
-            "message": "Authentication successful!",
-            "user": {
-                "gid": tokens.user_gid,
-                "name": tokens.user_name,
-                "email": tokens.user_email
-            }
-        })
+            if success:
+                logger.info(f"OAuth successful for session {state[:8]}...: {tokens.user_name} ({tokens.user_gid})")
+                return JSONResponse({
+                    "status": "success",
+                    "message": "Authentication successful! You can close this window.",
+                    "session_id": state,
+                    "user": {
+                        "gid": tokens.user_gid,
+                        "name": tokens.user_name,
+                        "email": tokens.user_email
+                    }
+                })
+            else:
+                return JSONResponse({
+                    "error": "session_storage_failed",
+                    "description": "Failed to store session data"
+                }, status_code=500)
+
+        else:
+            # Legacy flow (backward compatibility)
+            user_id = tokens.user_gid or "default_user"
+            oauth_manager.store_tokens(user_id, tokens)
+
+            logger.info(f"OAuth successful for user: {tokens.user_name} ({user_id}) [legacy]")
+
+            return JSONResponse({
+                "status": "success",
+                "message": "Authentication successful!",
+                "user": {
+                    "gid": tokens.user_gid,
+                    "name": tokens.user_name,
+                    "email": tokens.user_email
+                }
+            })
 
     except AuthenticationError as e:
         logger.error(f"OAuth callback error: {str(e)}")
@@ -220,25 +324,228 @@ async def oauth_status(request: Request) -> JSONResponse:
     """
     Check OAuth authentication status.
 
-    For development. In production, check specific user.
+    Supports both session-based (with ?session=xxx) and legacy flows.
     """
+    session_manager = get_session_manager()
     oauth_manager = get_oauth_manager()
 
-    # Check default user
-    user_id = "default_user"
-    is_authenticated = oauth_manager.is_authenticated(user_id)
+    # Check if session_id is provided
+    session_id = request.query_params.get("session")
 
-    if is_authenticated:
-        user_info = oauth_manager.get_user_info(user_id)
+    if session_id:
+        # Session-based flow
+        session = await session_manager.get_session(session_id)
+        if not session:
+            return JSONResponse({
+                "authenticated": False,
+                "error": "session_not_found",
+                "message": "Session not found"
+            }, status_code=404)
+
+        # Validate session
+        is_valid, error_msg = await session_manager.validate_session(session_id)
+
+        if is_valid:
+            return JSONResponse({
+                "authenticated": True,
+                "session_id": session_id,
+                "state": session.state.value,
+                "user": {
+                    "gid": session.user_gid,
+                    "name": session.user_name,
+                    "email": session.user_email
+                },
+                "token_expired": session.is_token_expired(),
+                "needs_refresh": session.needs_refresh()
+            })
+        else:
+            return JSONResponse({
+                "authenticated": False,
+                "session_id": session_id,
+                "state": session.state.value,
+                "error": error_msg,
+                "message": f"Session invalid: {error_msg}. Visit /oauth/start?session={session_id} to re-authenticate."
+            })
+
+    else:
+        # Legacy flow
+        user_id = "default_user"
+        is_authenticated = oauth_manager.is_authenticated(user_id)
+
+        if is_authenticated:
+            user_info = oauth_manager.get_user_info(user_id)
+            return JSONResponse({
+                "authenticated": True,
+                "user": user_info,
+                "legacy": True
+            })
+        else:
+            return JSONResponse({
+                "authenticated": False,
+                "message": "Not authenticated. Visit /oauth/start to authenticate.",
+                "legacy": True
+            })
+
+
+async def session_create(request: Request) -> JSONResponse:
+    """
+    Create a new session for a Desktop instance.
+
+    POST /session/create
+    Body: {"desktop_instance_id": "unique-desktop-id"}
+    """
+    session_manager = get_session_manager()
+
+    try:
+        data = await request.json()
+        desktop_instance_id = data.get("desktop_instance_id")
+
+        if not desktop_instance_id:
+            return JSONResponse({
+                "error": "missing_parameter",
+                "description": "desktop_instance_id is required"
+            }, status_code=400)
+
+        # Create session
+        session_id = await session_manager.create_session(desktop_instance_id)
+
+        logger.info(f"Created session {session_id[:8]}... for Desktop {desktop_instance_id}")
+
         return JSONResponse({
-            "authenticated": True,
-            "user": user_info
+            "status": "success",
+            "session_id": session_id,
+            "desktop_instance_id": desktop_instance_id,
+            "oauth_url": f"/oauth/start?session={session_id}",
+            "message": "Session created. User should visit oauth_url to authenticate."
         })
+
+    except Exception as e:
+        logger.error(f"Session creation error: {str(e)}")
+        return JSONResponse({
+            "error": "session_creation_failed",
+            "description": str(e)
+        }, status_code=500)
+
+
+async def session_validate(request: Request) -> JSONResponse:
+    """
+    Validate that a session is active and ready for API calls.
+
+    POST /session/validate
+    Body: {"session_id": "session-id"}
+    """
+    session_manager = get_session_manager()
+
+    try:
+        data = await request.json()
+        session_id = data.get("session_id")
+
+        if not session_id:
+            return JSONResponse({
+                "error": "missing_parameter",
+                "description": "session_id is required"
+            }, status_code=400)
+
+        # Validate session
+        is_valid, error_msg = await session_manager.validate_session(session_id)
+
+        if is_valid:
+            session = await session_manager.get_session(session_id)
+            return JSONResponse({
+                "valid": True,
+                "session_id": session_id,
+                "user": {
+                    "gid": session.user_gid,
+                    "name": session.user_name,
+                    "email": session.user_email
+                }
+            })
+        else:
+            return JSONResponse({
+                "valid": False,
+                "session_id": session_id,
+                "error": error_msg,
+                "requires_auth": True,
+                "oauth_url": f"/oauth/start?session={session_id}"
+            })
+
+    except Exception as e:
+        logger.error(f"Session validation error: {str(e)}")
+        return JSONResponse({
+            "error": "validation_failed",
+            "description": str(e)
+        }, status_code=500)
+
+
+async def session_revoke(request: Request) -> JSONResponse:
+    """
+    Revoke a session explicitly.
+
+    POST /session/revoke
+    Body: {"session_id": "session-id"}
+    """
+    session_manager = get_session_manager()
+
+    try:
+        data = await request.json()
+        session_id = data.get("session_id")
+
+        if not session_id:
+            return JSONResponse({
+                "error": "missing_parameter",
+                "description": "session_id is required"
+            }, status_code=400)
+
+        # Revoke session
+        success = await session_manager.revoke_session(session_id)
+
+        if success:
+            logger.info(f"Revoked session {session_id[:8]}...")
+            return JSONResponse({
+                "status": "success",
+                "message": "Session revoked successfully"
+            })
+        else:
+            return JSONResponse({
+                "error": "session_not_found",
+                "description": "Session not found"
+            }, status_code=404)
+
+    except Exception as e:
+        logger.error(f"Session revocation error: {str(e)}")
+        return JSONResponse({
+            "error": "revocation_failed",
+            "description": str(e)
+        }, status_code=500)
+
+
+async def session_info(request: Request) -> JSONResponse:
+    """
+    Get detailed session information (for debugging/monitoring).
+
+    GET /session/info?session={id}
+    """
+    session_manager = get_session_manager()
+    session_id = request.query_params.get("session")
+
+    if not session_id:
+        # Return all sessions
+        all_sessions = session_manager.get_all_sessions()
+        return JSONResponse({
+            "sessions": all_sessions,
+            "count": len(all_sessions)
+        })
+
+    # Return specific session
+    session_info_data = session_manager.get_session_info(session_id)
+
+    if session_info_data:
+        return JSONResponse(session_info_data)
     else:
         return JSONResponse({
-            "authenticated": False,
-            "message": "Not authenticated. Visit /oauth/start to authenticate."
-        })
+            "error": "session_not_found",
+            "description": "Session not found"
+        }, status_code=404)
 
 
 # Create Starlette app
@@ -249,6 +556,10 @@ app = Starlette(
         Route("/oauth/start", oauth_start, methods=["GET"]),
         Route("/oauth/callback", oauth_callback, methods=["GET"]),
         Route("/oauth/status", oauth_status, methods=["GET"]),
+        Route("/session/create", session_create, methods=["POST"]),
+        Route("/session/validate", session_validate, methods=["POST"]),
+        Route("/session/revoke", session_revoke, methods=["POST"]),
+        Route("/session/info", session_info, methods=["GET"]),
         # MCP endpoint will be added via SSE transport
     ],
     middleware=[
@@ -292,6 +603,10 @@ def main():
     # Initialize OAuth manager
     initialize_oauth_manager(client_id, client_secret, redirect_uri)
     logger.info("OAuth manager initialized")
+
+    # Initialize session manager
+    initialize_session_manager()
+    logger.info("Session manager initialized")
 
     # Log startup info
     logger.info(f"Starting Asana MCP Server")
