@@ -141,35 +141,63 @@ curl -X POST https://asana-mcp-railway-production.up.railway.app/session/revoke 
 
 ## Available Tools
 
-The Asana MCP provides 22 tools across 4 categories:
+The Asana MCP provides **42 tools** with **full parity** to the official Asana MCP:
 
-### Task Management (8 tools)
+### Task Management (15 tools)
 - `asana_list_workspaces` - List all accessible workspaces
-- `asana_search_tasks` - Search tasks with filters
+- `asana_search_tasks` - Search tasks with advanced filters
 - `asana_get_task` - Get detailed task information
-- `asana_get_multiple_tasks` - Batch fetch multiple tasks
+- `asana_get_multiple_tasks_by_gid` - Batch fetch multiple tasks
 - `asana_create_task` - Create a new task
 - `asana_update_task` - Update existing task
+- `asana_delete_task` - Delete a task permanently
+- `asana_duplicate_task` - Duplicate task with properties
 - `asana_get_task_stories` - Get task comments/activity
 - `asana_create_task_story` - Add comment to task
+- `asana_get_subtasks` - Get all subtasks of a task
+- `asana_get_tasks_from_project` - Get all tasks in a project
+- `asana_get_tasks_from_section` - Get all tasks in a section
+- `asana_add_followers_to_task` - Add task followers
+- `asana_remove_followers_from_task` - Remove task followers
 
-### Project Management (5 tools)
+### Project Management (10 tools)
 - `asana_search_projects` - Search projects in workspace
 - `asana_get_project` - Get project details
+- `asana_create_project` - Create new project
+- `asana_update_project` - Update project properties
+- `asana_delete_project` - Delete a project
+- `asana_duplicate_project` - Duplicate project with tasks
+- `asana_get_project_task_counts` - Get task count statistics
 - `asana_get_project_sections` - List project sections
 - `asana_get_project_statuses` - Get project status updates
 - `asana_create_project_status` - Create status update
 
-### Relationships (4 tools)
-- `asana_add_task_dependencies` - Add task dependencies
-- `asana_add_task_dependents` - Add task dependents
-- `asana_create_subtask` - Create a subtask
-- `asana_set_parent_for_task` - Set parent task
+### Section Management (5 tools)
+- `asana_create_section` - Create section in project
+- `asana_get_section` - Get section details
+- `asana_update_section` - Update section name
+- `asana_delete_section` - Delete a section
+- `asana_add_task_to_section` - Move task to section
 
-### Organization (3 tools)
+### Task Relationships (8 tools)
+- `asana_add_task_dependencies` - Add blocking tasks
+- `asana_add_task_dependents` - Add blocked tasks
+- `asana_get_task_dependencies` - Get tasks this depends on
+- `asana_get_task_dependents` - Get tasks depending on this
+- `asana_remove_task_dependencies` - Remove dependencies
+- `asana_remove_task_dependents` - Remove dependents
+- `asana_create_subtask` - Create child task
+- `asana_set_parent_for_task` - Convert to subtask
+
+### Task Organization (4 tools)
+- `asana_add_project_to_task` - Add task to project
+- `asana_remove_project_from_task` - Remove from project
+- `asana_add_tag_to_task` - Add tag to task
+- `asana_remove_tag_from_task` - Remove tag from task
+
+### Workspace & Tags (2 tools)
 - `asana_get_tags_for_workspace` - List workspace tags
 - `asana_get_tasks_for_tag` - Get tasks with specific tag
-- `asana_list_workspaces` - List workspaces (duplicate for convenience)
 
 ## Troubleshooting
 

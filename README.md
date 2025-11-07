@@ -1,45 +1,40 @@
 # Asana MCP Server for Railway
 
-Production-ready Model Context Protocol (MCP) server for Asana, featuring OAuth 2.0 authentication and 22 comprehensive tools for task and project management.
+Production-ready Model Context Protocol (MCP) server for Asana with **full parity** to the official Asana MCP. Features OAuth 2.0 authentication and 42 comprehensive tools for complete task and project management.
 
 ## Features
 
 - ✅ **OAuth 2.0 Authentication** with PKCE for enhanced security
-- ✅ **22 MCP Tools** for comprehensive Asana integration
+- ✅ **42 MCP Tools** - Full parity with official Asana MCP
 - ✅ **HTTP/SSE Transport** for remote access from Claude Code
 - ✅ **Rate Limiting** (150-1,500 requests/minute)
 - ✅ **Automatic Token Refresh** (1-hour access token lifecycle)
 - ✅ **Multi-User Support** with per-user token management
 - ✅ **Railway Deployment** ready with Docker configuration
 
-## Available Tools
+## Available Tools (42 Total)
 
-### Task Management (8 tools)
-- `asana_list_workspaces` - List available workspaces
-- `asana_search_tasks` - Search tasks with filters
-- `asana_get_task` - Get task details
-- `asana_get_multiple_tasks_by_gid` - Batch fetch tasks
-- `asana_create_task` - Create new task
-- `asana_update_task` - Update existing task
-- `asana_get_task_stories` - Get task comments/activity
-- `asana_create_task_story` - Add comment to task
+**Full parity with official Asana MCP** - All essential Asana operations supported.
 
-### Project Management (5 tools)
-- `asana_search_projects` - Search projects
-- `asana_get_project` - Get project details
-- `asana_get_project_sections` - List project sections
-- `asana_get_project_statuses` - Get status updates
-- `asana_create_project_status` - Post status update
+### Task Management (15 tools)
+Complete task lifecycle management including CRUD operations, search, batch operations, and subtask hierarchy.
 
-### Task Relationships (4 tools)
-- `asana_add_task_dependencies` - Add blocking tasks
-- `asana_add_task_dependents` - Add dependent tasks
-- `asana_create_subtask` - Create child task
-- `asana_set_parent_for_task` - Convert to subtask
+### Project Management (10 tools)
+Full project CRUD, duplication, statistics, sections, and status updates.
 
-### Organization (3 tools)
-- `asana_get_tags_for_workspace` - List tags
-- `asana_get_tasks_for_tag` - Find tagged tasks
+### Section Management (5 tools)
+Complete section CRUD and task assignment operations.
+
+### Task Relationships (8 tools)
+Dependencies, dependents, and subtask relationships with full add/remove/view capabilities.
+
+### Task Organization (4 tools)
+Manage task projects and tags (add/remove operations).
+
+### Workspace & Tags (2 tools)
+Workspace listing and tag-based task queries.
+
+**See [TOOL-LIST-v1.1.0.md](TOOL-LIST-v1.1.0.md) for complete tool documentation.**
 
 ## Quick Start
 

@@ -44,8 +44,8 @@ mcp_server = Server("asana-mcp")
 # Global rate limiter
 rate_limiter = RateLimiter(max_requests=150)  # Free tier default
 
-# Tool registry
-ALL_TOOLS = TASK_TOOLS + PROJECT_TOOLS + RELATIONSHIP_TOOLS + ORGANIZATION_TOOLS
+# Tool registry imported from src.tools
+# ALL_TOOLS now includes all 42 tools (Phase 1 + Phase 2)
 
 
 # Helper function to get Asana client for a user
