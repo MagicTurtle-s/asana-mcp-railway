@@ -26,10 +26,7 @@ from mcp.types import Tool, TextContent
 from .oauth import initialize_oauth_manager, get_oauth_manager, AuthenticationError
 from .asana_client import AsanaClient, RateLimiter
 from .session_manager import initialize_session_manager, get_session_manager, SessionState
-from .tools.tasks import TASK_TOOLS
-from .tools.projects import PROJECT_TOOLS
-from .tools.relationships import RELATIONSHIP_TOOLS
-from .tools.organization import ORGANIZATION_TOOLS
+from .tools import ALL_TOOLS
 
 # Configure logging
 logging.basicConfig(
