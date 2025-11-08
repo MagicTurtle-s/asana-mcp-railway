@@ -36,6 +36,21 @@ Workspace listing and tag-based task queries.
 
 **See [TOOL-LIST-v1.1.0.md](TOOL-LIST-v1.1.0.md) for complete tool documentation.**
 
+## 📚 Included Skills
+
+This repository includes a Claude Code skill for optimal Asana MCP usage:
+
+**asana-mcp-field-guide** - Execution-ready reference that automatically activates when performing Asana operations. Provides:
+- ✅ **Query optimization patterns** - 30-50x token reduction through field filtering
+- ✅ **Date range best practices** - Prevents unbounded historical data fetches
+- ✅ **Custom field handling** - Systematic filtering to avoid response bloat
+- ✅ **Anti-patterns guide** - Common mistakes and fixes
+- ✅ **Ready-to-use templates** - Workload checks, priority lists, overdue analysis
+
+The skill auto-discovers when you use this MCP server and provides context-aware guidance for efficient API usage.
+
+**Location**: `.claude/skills/asana-mcp-field-guide/SKILL.md`
+
 ## Quick Start
 
 ### 1. Register Asana OAuth App
