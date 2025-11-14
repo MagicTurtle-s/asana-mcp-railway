@@ -2,6 +2,20 @@
 
 Architecture, patterns, and implementation details for the Asana MCP server.
 
+## MCP Configuration
+
+This project uses a project-specific MCP configuration to load the Asana MCP server when working in this directory.
+
+**Setup:**
+- `.claude/settings.json` (local, gitignored) contains the actual MCP server configuration
+- `.claude/settings.json.example` (committed) serves as a template
+- The Asana MCP (~35.7k tokens) is only loaded when working in this project
+
+**When working on this project:**
+- The Asana MCP tools are automatically available for testing
+- You can use tools like `mcp__asana__asana_create_task` directly
+- This configuration doesn't affect other projects
+
 ## Architecture Overview
 
 ### System Design

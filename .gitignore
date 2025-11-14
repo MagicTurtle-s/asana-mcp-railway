@@ -70,3 +70,6 @@ credentials.json
 tmp/
 temp/
 *.tmp
+
+# User-specific Claude settings
+.claude/settings.json

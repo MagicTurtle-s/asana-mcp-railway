@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "asana": {
+      "type": "sse",
+      "url": "https://asana-mcp-railway-production.up.railway.app/sse",
+      "comment": "Replace with your deployed Asana MCP server URL"
+    }
+  }
+}

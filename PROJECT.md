@@ -92,6 +92,17 @@ Access to Asana's Work Graph from Claude Code, including:
 **MCP Endpoint**: `/mcp` (SSE transport)
 **OAuth Callback**: `/oauth/callback`
 
+## Required MCPs
+
+When working on this project in Claude Code, you'll need the Asana MCP server enabled to test and develop the tools.
+
+**Setup:**
+1. Copy `.claude/settings.json.example` to `.claude/settings.json`
+2. Update the URL if using a different deployment
+3. Claude Code will automatically load the Asana MCP when working in this project directory
+
+This configuration is project-specific and won't affect other projects. The Asana MCP (~35.7k tokens) is only loaded when needed.
+
 ## Setup Instructions
 
 ### 1. Register Asana OAuth App
