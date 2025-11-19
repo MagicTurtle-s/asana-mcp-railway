@@ -12,6 +12,10 @@ from pydantic import BaseModel, Field
 
 class DeleteTaskInput(BaseModel):
     """Input schema for delete_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to delete"
     )
@@ -34,6 +38,10 @@ async def delete_task_handler(client, params: dict) -> str:
 
 class DuplicateTaskInput(BaseModel):
     """Input schema for duplicate_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to duplicate"
     )
@@ -67,6 +75,10 @@ async def duplicate_task_handler(client, params: dict) -> str:
 
 class GetSubtasksInput(BaseModel):
     """Input schema for get_subtasks"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to get subtasks for"
     )
@@ -99,6 +111,10 @@ async def get_subtasks_handler(client, params: dict) -> str:
 
 class GetTasksFromProjectInput(BaseModel):
     """Input schema for get_tasks_from_project"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to get tasks from"
     )
@@ -140,6 +156,10 @@ async def get_tasks_from_project_handler(client, params: dict) -> str:
 
 class GetTasksFromSectionInput(BaseModel):
     """Input schema for get_tasks_from_section"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     section_gid: str = Field(
         description="Section GID to get tasks from"
     )
@@ -172,6 +192,10 @@ async def get_tasks_from_section_handler(client, params: dict) -> str:
 
 class GetTaskDependenciesInput(BaseModel):
     """Input schema for get_task_dependencies"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to get dependencies for"
     )
@@ -204,6 +228,10 @@ async def get_task_dependencies_handler(client, params: dict) -> str:
 
 class GetTaskDependentsInput(BaseModel):
     """Input schema for get_task_dependents"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to get dependents for"
     )
@@ -236,6 +264,10 @@ async def get_task_dependents_handler(client, params: dict) -> str:
 
 class AddProjectToTaskInput(BaseModel):
     """Input schema for add_project_to_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID"
     )
@@ -290,6 +322,10 @@ async def add_project_to_task_handler(client, params: dict) -> str:
 
 class RemoveProjectFromTaskInput(BaseModel):
     """Input schema for remove_project_from_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID"
     )
@@ -317,6 +353,10 @@ async def remove_project_from_task_handler(client, params: dict) -> str:
 
 class AddTagToTaskInput(BaseModel):
     """Input schema for add_tag_to_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID"
     )
@@ -344,6 +384,10 @@ async def add_tag_to_task_handler(client, params: dict) -> str:
 
 class RemoveTagFromTaskInput(BaseModel):
     """Input schema for remove_tag_from_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID"
     )

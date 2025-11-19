@@ -10,6 +10,10 @@ from pydantic import BaseModel, Field
 
 class AddDependenciesInput(BaseModel):
     """Input schema for add_dependencies"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to add dependencies to"
     )
@@ -20,6 +24,10 @@ class AddDependenciesInput(BaseModel):
 
 class AddDependentsInput(BaseModel):
     """Input schema for add_dependents"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to add dependents to"
     )
@@ -30,6 +38,10 @@ class AddDependentsInput(BaseModel):
 
 class CreateSubtaskInput(BaseModel):
     """Input schema for create_subtask"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     parent_gid: str = Field(
         description="Parent task GID"
     )
@@ -52,6 +64,10 @@ class CreateSubtaskInput(BaseModel):
 
 class SetParentInput(BaseModel):
     """Input schema for set_parent"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to set parent for"
     )

@@ -10,6 +10,14 @@ from pydantic import BaseModel, Field
 
 class GetTagsInput(BaseModel):
     """Input schema for get_tags"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     workspace: str = Field(
         description="Workspace GID to get tags from"
     )
@@ -21,6 +29,14 @@ class GetTagsInput(BaseModel):
 
 class GetTasksForTagInput(BaseModel):
     """Input schema for get_tasks_for_tag"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     tag_gid: str = Field(
         description="Tag GID to get tasks for"
     )

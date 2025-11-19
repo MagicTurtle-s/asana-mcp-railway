@@ -12,6 +12,10 @@ from pydantic import BaseModel, Field
 
 class CreateProjectInput(BaseModel):
     """Input schema for create_project"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     workspace: Optional[str] = Field(
         None,
         description="Workspace GID (required if not providing team)"
@@ -92,6 +96,10 @@ async def create_project_handler(client, params: dict) -> str:
 
 class UpdateProjectInput(BaseModel):
     """Input schema for update_project"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to update"
     )
@@ -166,6 +174,10 @@ async def update_project_handler(client, params: dict) -> str:
 
 class DeleteProjectInput(BaseModel):
     """Input schema for delete_project"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to delete"
     )
@@ -188,6 +200,10 @@ async def delete_project_handler(client, params: dict) -> str:
 
 class GetProjectTaskCountsInput(BaseModel):
     """Input schema for get_project_task_counts"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to get task counts for"
     )
@@ -229,6 +245,10 @@ async def get_project_task_counts_handler(client, params: dict) -> str:
 
 class DuplicateProjectInput(BaseModel):
     """Input schema for duplicate_project"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to duplicate"
     )

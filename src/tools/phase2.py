@@ -12,6 +12,10 @@ from pydantic import BaseModel, Field
 
 class RemoveDependenciesInput(BaseModel):
     """Input schema for remove_dependencies"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID"
     )
@@ -44,6 +48,10 @@ async def remove_dependencies_handler(client, params: dict) -> str:
 
 class RemoveDependentsInput(BaseModel):
     """Input schema for remove_dependents"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID"
     )
@@ -76,6 +84,10 @@ async def remove_dependents_handler(client, params: dict) -> str:
 
 class GetSectionInput(BaseModel):
     """Input schema for get_section"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     section_gid: str = Field(
         description="Section GID"
     )
@@ -120,6 +132,10 @@ async def get_section_handler(client, params: dict) -> str:
 
 class UpdateSectionInput(BaseModel):
     """Input schema for update_section"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     section_gid: str = Field(
         description="Section GID"
     )
@@ -148,6 +164,10 @@ async def update_section_handler(client, params: dict) -> str:
 
 class DeleteSectionInput(BaseModel):
     """Input schema for delete_section"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     section_gid: str = Field(
         description="Section GID to delete"
     )

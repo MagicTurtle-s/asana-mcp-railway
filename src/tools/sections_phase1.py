@@ -12,6 +12,10 @@ from pydantic import BaseModel, Field
 
 class CreateSectionInput(BaseModel):
     """Input schema for create_section"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to create section in"
     )
@@ -51,6 +55,10 @@ async def create_section_handler(client, params: dict) -> str:
 
 class AddTaskToSectionInput(BaseModel):
     """Input schema for add_task_to_section"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     section_gid: str = Field(
         description="Section GID"
     )

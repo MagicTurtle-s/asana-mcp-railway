@@ -13,6 +13,10 @@ from pydantic import BaseModel, Field
 
 class ListWorkspacesInput(BaseModel):
     """Input schema for list_workspaces"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     opt_fields: Optional[str] = Field(
         None,
         description="Comma-separated list of fields to return (e.g., 'name,is_organization')"
@@ -21,6 +25,10 @@ class ListWorkspacesInput(BaseModel):
 
 class SearchTasksInput(BaseModel):
     """Input schema for search_tasks"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     workspace: str = Field(
         description="Workspace GID to search in"
     )
@@ -68,6 +76,10 @@ class SearchTasksInput(BaseModel):
 
 class GetTaskInput(BaseModel):
     """Input schema for get_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to retrieve"
     )
@@ -79,6 +91,10 @@ class GetTaskInput(BaseModel):
 
 class GetMultipleTasksInput(BaseModel):
     """Input schema for get_multiple_tasks"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gids: str = Field(
         description="Comma-separated list of task GIDs (maximum 25)"
     )
@@ -90,6 +106,10 @@ class GetMultipleTasksInput(BaseModel):
 
 class CreateTaskInput(BaseModel):
     """Input schema for create_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     workspace: Optional[str] = Field(
         None,
         description="Workspace GID (required if not providing projects)"
@@ -129,6 +149,10 @@ class CreateTaskInput(BaseModel):
 
 class UpdateTaskInput(BaseModel):
     """Input schema for update_task"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to update"
     )
@@ -160,6 +184,10 @@ class UpdateTaskInput(BaseModel):
 
 class GetTaskStoriesInput(BaseModel):
     """Input schema for get_task_stories"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to get stories for"
     )
@@ -171,6 +199,10 @@ class GetTaskStoriesInput(BaseModel):
 
 class CreateTaskStoryInput(BaseModel):
     """Input schema for create_task_story"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     task_gid: str = Field(
         description="Task GID to add comment to"
     )

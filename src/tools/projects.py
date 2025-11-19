@@ -10,6 +10,10 @@ from pydantic import BaseModel, Field
 
 class SearchProjectsInput(BaseModel):
     """Input schema for search_projects"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     workspace: str = Field(
         description="Workspace GID to search in"
     )
@@ -29,6 +33,10 @@ class SearchProjectsInput(BaseModel):
 
 class GetProjectInput(BaseModel):
     """Input schema for get_project"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to retrieve"
     )
@@ -40,6 +48,10 @@ class GetProjectInput(BaseModel):
 
 class GetProjectSectionsInput(BaseModel):
     """Input schema for get_project_sections"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to get sections for"
     )
@@ -51,6 +63,10 @@ class GetProjectSectionsInput(BaseModel):
 
 class GetProjectStatusesInput(BaseModel):
     """Input schema for get_project_statuses"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to get status updates for"
     )
@@ -62,6 +78,10 @@ class GetProjectStatusesInput(BaseModel):
 
 class CreateProjectStatusInput(BaseModel):
     """Input schema for create_project_status"""
+    session_id: Optional[str] = Field(
+        None,
+        description="Session ID for authentication (required for Railway MCP)"
+    )
     project_gid: str = Field(
         description="Project GID to create status update for"
     )
