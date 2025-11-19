@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "asana": {
+      "type": "sse",
+      "url": "https://asana-mcp-railway-production.up.railway.app/sse"
+    }
+  },
+  "metadata": {
+    "name": "asana",
+    "version": "1.0.0",
+    "description": "Asana project management with comprehensive task tracking, goal setting, portfolio management, and team collaboration features",
+    "keywords": [
+      "task",
+      "project",
+      "goal",
+      "portfolio",
+      "assignment",
+      "milestone",
+      "deadline",
+      "team"
+    ],
+    "capabilities": "Project management operations including task tracking, goal setting, project organization, and dependency management. Can search, create, update tasks and projects across workspaces. Manages assignees, due dates, subtasks, and task dependencies. Supports team collaboration, portfolios, and goal tracking with custom fields and tags.",
+    "transport": "sse",
+    "toolCount": 42,
+    "useCases": [
+      "Finding tasks assigned to specific people",
+      "Searching projects by name or status",
+      "Tracking project milestones and deadlines",
+      "Managing task dependencies and subtasks"
+    ],
+    "lastValidated": "2025-11-17T12:00:00Z",
+    "projectPath": "C:\\Users\\jonat\\asana-mcp-railway"
+  }
+}

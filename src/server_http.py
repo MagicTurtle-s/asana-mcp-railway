@@ -20,6 +20,7 @@ import uvicorn
 
 # MCP imports - using mcp package
 from mcp.server import Server
+from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent
 
 # Our modules
@@ -317,6 +318,29 @@ async def oauth_callback(request: Request) -> Response:
         }, status_code=401)
 
 
+# Initialize SSE transport for MCP
+sse = SseServerTransport("/messages/")
+
+
+async def handle_sse(request: Request) -> Response:
+    """
+    Handle SSE connections for MCP protocol.
+
+    This endpoint establishes the SSE connection and runs the MCP server.
+    """
+    async with sse.connect_sse(
+        request.scope, request.receive, request._send
+    ) as streams:
+        # Run MCP server with the SSE streams
+        await mcp_server.run(
+            streams[0],
+            streams[1],
+            mcp_server.create_initialization_options()
+        )
+    # Return empty response to prevent errors on client disconnect
+    return Response()
+
+
 async def oauth_status(request: Request) -> JSONResponse:
     """
     Check OAuth authentication status.
@@ -557,7 +581,9 @@ app = Starlette(
         Route("/session/validate", session_validate, methods=["POST"]),
         Route("/session/revoke", session_revoke, methods=["POST"]),
         Route("/session/info", session_info, methods=["GET"]),
-        # MCP endpoint will be added via SSE transport
+        # MCP SSE endpoints
+        Route("/sse", endpoint=handle_sse, methods=["GET"]),
+        Mount("/messages/", app=sse.handle_post_message),
     ],
     middleware=[
         Middleware(
@@ -614,10 +640,10 @@ def main():
     logger.info(f"  MCP endpoint: http://{host}:{port}/mcp")
     logger.info(f"  Total tools: {len(ALL_TOOLS)}")
 
-    # Note about MCP transport
-    logger.info("\nNote: Full MCP SSE transport implementation requires additional setup.")
-    logger.info("For now, the server provides OAuth and tool implementations.")
-    logger.info("MCP transport will be added in the next update.")
+    # MCP transport info
+    logger.info("\n✅ MCP SSE transport enabled")
+    logger.info(f"  SSE endpoint: http://{host}:{port}/sse")
+    logger.info(f"  Messages endpoint: http://{host}:{port}/messages/")
 
     # Start server
     uvicorn.run(
