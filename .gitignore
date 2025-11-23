@@ -73,3 +73,6 @@ temp/
 
 # User-specific Claude settings
 .claude/settings.json
+
+# MCP config with secrets (for orchestrator development)
+.mcp-config*.json
